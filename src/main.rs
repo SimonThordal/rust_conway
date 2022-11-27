@@ -15,6 +15,13 @@ pub fn get_coordinates(n: i32) -> [i32; 2] {
     [rng.gen_range(0..n), rng.gen_range(0..n)]
 }
 
+/// Get the coordinates of a cells neighbors
+/// wrapping to the other side of the board for edge cells
+/// 
+/// # Arguments
+/// 
+/// * `coords` - The coordinates to find neighbors for
+/// * `n` - The max size of the board
 pub fn get_coordinate_neighbors(coords: [i32; 2], n: i32) -> [[i32; 2]; 4] {
     let mut res: [[i32; 2]; 4] = [[0,0]; 4];
     res[0] = [coords[0], (coords[1]+1).rem_euclid(n)]; 
@@ -22,7 +29,6 @@ pub fn get_coordinate_neighbors(coords: [i32; 2], n: i32) -> [[i32; 2]; 4] {
     res[2] = [(coords[0]+1).rem_euclid(n), coords[1]]; 
     res[3] = [(coords[0]-1).rem_euclid(n), coords[1]]; 
     return res;
-
 }
 
 #[cfg(test)]
@@ -57,5 +63,11 @@ mod tests {
         let expected = [[0,3], [0,1], [1,2], [5,2]];
         let actual = get_coordinate_neighbors(coords, n);
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn can_get_set_of_neighbors() {
+        // Given a set of neighbors
+        // We can get the count of each coordinate
     }
 }
