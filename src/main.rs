@@ -1,5 +1,20 @@
 use rand::{thread_rng, Rng};
 
+#[derive(Debug)]
+struct Coordinate {
+    x: i32,
+    y: i32
+}
+
+impl Coordinate {
+    fn new(x: i32, y: i32) -> Coordinate {
+        Coordinate {
+            x: x,
+            y: y
+        }
+    }
+}
+
 /// Gets the coordinates of a board cell
 /// 
 /// # Arguments
@@ -41,13 +56,13 @@ mod tests {
 
     #[test]
     fn test_get_coordinates() {
-        // Given a max board size
-        let n = 10;
         // Get a coordinate on the board
-        let coord = get_coordinates(n);
+        let coord = Coordinate::new(1,2);
+        assert_eq!(coord.x, 1);
+        assert_eq!(coord.y, 2);
         // The coordinate will point to a cell on the board
-        assert!(coord[0] < n);
-        assert!(coord[1] < n);
+        // Given a max board size get a random coordinate
+        
     }
 
     #[test]
