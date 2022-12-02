@@ -2,6 +2,10 @@ use rand::{thread_rng, Rng};
 
 /// Gets the coordinates of a board cell
 /// 
+/// # Arguments
+/// 
+/// * `n` - The size of the board
+/// 
 /// # Examples 
 /// 
 /// ```
@@ -21,7 +25,7 @@ pub fn get_coordinates(n: i32) -> [i32; 2] {
 /// # Arguments
 /// 
 /// * `coords` - The coordinates to find neighbors for
-/// * `n` - The max size of the board
+/// * `n` - Thes size of the board
 pub fn get_coordinate_neighbors(coords: [i32; 2], n: i32) -> [[i32; 2]; 4] {
     let mut res: [[i32; 2]; 4] = [[0,0]; 4];
     res[0] = [coords[0], (coords[1]+1).rem_euclid(n)]; 
