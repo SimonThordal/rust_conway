@@ -1,17 +1,38 @@
 use rand::{thread_rng, Rng};
 
-#[derive(Debug)]
-struct Coordinate {
+#[derive(Debug, Clone, Copy)]
+struct Coordinates {
     x: i32,
     y: i32
 }
 
-impl Coordinate {
-    fn new(x: i32, y: i32) -> Coordinate {
-        Coordinate {
+impl Coordinates {
+    fn new(x: i32, y: i32) -> Coordinates {
+        Coordinates {
             x: x,
             y: y
         }
+    }
+
+    fn random(n: i32) -> Coordinates {
+        let mut rng = thread_rng();
+        Coordinates {
+            x: rng.gen_range(0..n),
+            y: rng.gen_range(0..n)
+        }
+    }
+
+    fn neighbors(&self) -> [Option<Coordinates>; 9] {
+        let n = 10;
+        let mut res: [Option<Coordinates>; 9] = [None; 9];
+        let mut ix = 0;
+        for i in -1..2 {
+            for j in -1..2 {
+                res[ix] = Some(Coordinates::new((self.x+j).rem_euclid(n), (self.y+i).rem_euclid(n)));
+                ix += 1;
+            }
+        }
+        return res;
     }
 }
 
@@ -57,31 +78,43 @@ mod tests {
     #[test]
     fn test_get_coordinates() {
         // Get a coordinate on the board
-        let coord = Coordinate::new(1,2);
-        assert_eq!(coord.x, 1);
-        assert_eq!(coord.y, 2);
+        let coords = Coordinates::new(1,2);
+        assert_eq!(coords.x, 1);
+        assert_eq!(coords.y, 2);
         // The coordinate will point to a cell on the board
         // Given a max board size get a random coordinate
-        
+        let n = 10;
+        let coords = Coordinates::random(n);
+        assert!(coords.x < n && coords.x >= 0);
+        assert!(coords.y < n && coords.y >= 0);
     }
 
     #[test]
     fn test_can_get_neighbors_from_coordinates() {
         // Given a set of coordinates
-        let coords = [3,4];
+        let coords = Coordinates::new(3,4);
         // Given a board size
         let n = 6;
         // And its neighbors
-        let expected = [[3,5], [3,3], [4,4], [2, 4]];
+        let expected = [
+            [2,3],
+            [3,3],
+            [4,3],
+            [2,4],
+            [3,4],
+            [4,4],
+            [2,5],
+            [3,5],
+            [4,5]
+        ];
         // We can get the neighbors of the coordinates
-        let actual = get_coordinate_neighbors(coords, n);
-        assert_eq!(actual, expected);
-        // And coordinates on the edge of that board
-        let coords = [0, 2];
-        // We expect the neigbors to wrap around the board
-        let expected = [[0,3], [0,1], [1,2], [5,2]];
-        let actual = get_coordinate_neighbors(coords, n);
-        assert_eq!(actual, expected);
+        let actual = coords.neighbors();
+        for i in 0..9 {
+            let b = actual[i].unwrap();
+            assert_eq!(expected[i][0], b.x);
+            assert_eq!(expected[i][1], b.y);
+
+        }
     }
 
     #[test]
