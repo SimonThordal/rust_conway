@@ -1,125 +1,198 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
 use rand::{thread_rng, Rng};
 
-#[derive(Debug, Clone, Copy)]
-struct Coordinates {
-    x: i32,
-    y: i32
+/// Generates a randomized board
+/// 
+/// # Arguments
+/// 
+/// * `n` The dimension of the board
+/// 
+/// # Returns
+/// 
+/// An n by n board with randomly assigned boolean values
+/// 
+fn generate_board(n: u32) -> Vec<bool> {
+	let mut board: Vec<bool> = vec![];
+	let mut rng = thread_rng();
+	for _ in 0..n.pow(2) {
+		board.push(rng.gen_bool(0.5));
+	}
+	board
 }
 
-impl Coordinates {
-    fn new(x: i32, y: i32) -> Coordinates {
-        Coordinates {
-            x: x,
-            y: y
-        }
-    }
+/// Checks whether a given row and column index are within the bounds of a square board with a
+/// given size.
+///
+/// # Arguments
+///
+/// * `row` - The row index to check.
+/// * `col` - The column index to check.
+/// * `board_size` - The size of the board.
+///
+/// # Returns
+///
+/// True if the given row and column index are within the bounds of the board, false otherwise.
+///
+fn is_within_bounds(row: i32, col: i32, board_size: i32) -> bool {
+    row >= 0 && row < board_size && col >= 0 && col < board_size
+}
 
-    fn random(n: i32) -> Coordinates {
-        let mut rng = thread_rng();
-        Coordinates {
-            x: rng.gen_range(0..n),
-            y: rng.gen_range(0..n)
-        }
-    }
-
-    fn neighbors(&self) -> [Option<Coordinates>; 9] {
-        let n = 10;
-        let mut res: [Option<Coordinates>; 9] = [None; 9];
-        let mut ix = 0;
-        for i in -1..2 {
-            for j in -1..2 {
-                res[ix] = Some(Coordinates::new((self.x+j).rem_euclid(n), (self.y+i).rem_euclid(n)));
-                ix += 1;
+/// Counts the number of living neighbors of a cell at a given index on a square board represented
+/// as a slice of bools. A living neighbor is a cell adjacent to the given cell that is also alive.
+/// Diagonal neighbors are considered adjacent.
+///
+/// # Arguments
+///
+/// * `ix` - The index of the cell to check for living neighbors.
+/// * `board` - The board represented as a slice of bools.
+///
+/// # Returns
+///
+/// The number of living neighbors of the cell at the given index.
+///
+fn living_neighbors_count(ix: i32, board: &[bool]) -> i32 {
+    let mut count = 0;
+    let board_size = (board.len() as f64).sqrt() as i32;
+    let current_row = ix / board_size;
+    for i in -1..=1 {
+        let row_offset = i * board_size;
+        for j in -1..=1 {
+        	// Do not examine ix itself
+            if i == 0 && j == 0 {
+                continue;
+            }
+            let neighbor_row = current_row + i;
+            let neighbor_col = (ix % board_size) + j;
+            if is_within_bounds(neighbor_row, neighbor_col, board_size) {
+                let neighbor_ix = neighbor_row * board_size + neighbor_col;
+                if board[neighbor_ix as usize] {
+                    count += 1;
+                }
             }
         }
-        return res;
     }
+    count
 }
 
-/// Gets the coordinates of a board cell
-/// 
+/// Determines whether a cell with a given living status and number of living neighbors will survive
+/// to the next generation. A cell will survive if it is currently alive and has 2-3 living neighbors,
+/// or if it is currently dead and has exactly 3 living neighbors.
+///
 /// # Arguments
-/// 
-/// * `n` - The size of the board
-/// 
-/// # Examples 
-/// 
-/// ```
-/// let n = 10;
-/// let coord = conway::get_coordinates(n);
-/// assert!(coord.0 < n)
-/// assert!(coord.1 < n)
-/// ``` 
-pub fn get_coordinates(n: i32) -> [i32; 2] {
-    let mut rng = thread_rng();
-    [rng.gen_range(0..n), rng.gen_range(0..n)]
+///
+/// * `is_living` - Whether the cell is currently living (true) or dead (false).
+/// * `n_neighbors` - The number of living neighbors of the cell.
+///
+/// # Returns
+///
+/// True if the cell will survive to the next generation, false otherwise.
+///
+fn will_survive(is_living: bool, n_neighbors: u32) -> bool {
+	if !is_living {
+		if n_neighbors == 3 {
+			return true
+		}
+		return false
+	}
+	let res = match n_neighbors {
+		0..=1 => false,
+		2..=3 => true,
+		_ => false
+	};
+	res
 }
 
-/// Get the coordinates of a cells neighbors
-/// wrapping to the other side of the board for edge cells
-/// 
+/// Advances the state of the board to the next generation according to the rules of Conway's Game of Life.
+///
 /// # Arguments
-/// 
-/// * `coords` - The coordinates to find neighbors for
-/// * `n` - Thes size of the board
-pub fn get_coordinate_neighbors(coords: [i32; 2], n: i32) -> [[i32; 2]; 4] {
-    let mut res: [[i32; 2]; 4] = [[0,0]; 4];
-    res[0] = [coords[0], (coords[1]+1).rem_euclid(n)]; 
-    res[1] = [coords[0], (coords[1]-1).rem_euclid(n)]; 
-    res[2] = [(coords[0]+1).rem_euclid(n), coords[1]]; 
-    res[3] = [(coords[0]-1).rem_euclid(n), coords[1]]; 
-    return res;
+///
+/// * `board` - The current state of the board represented as a slice of bools.
+///
+/// # Returns
+///
+/// The next state of the board represented as a vector of bools.
+///
+fn advance_board(board: &[bool]) -> Vec<bool> {
+	let mut next_state: Vec<bool> = vec![];
+	for (i, x) in board.iter().enumerate() {
+		let n = living_neighbors_count(i as i32, board);
+		next_state.push(will_survive(*x, n as u32));
+	}
+	return next_state;
+}
+
+fn main() {
+	unimplemented!();
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
-    #[test]
-    fn test_get_coordinates() {
-        // Get a coordinate on the board
-        let coords = Coordinates::new(1,2);
-        assert_eq!(coords.x, 1);
-        assert_eq!(coords.y, 2);
-        // The coordinate will point to a cell on the board
-        // Given a max board size get a random coordinate
-        let n = 10;
-        let coords = Coordinates::random(n);
-        assert!(coords.x < n && coords.x >= 0);
-        assert!(coords.y < n && coords.y >= 0);
-    }
+	use crate::*;
 
-    #[test]
-    fn test_can_get_neighbors_from_coordinates() {
-        // Given a set of coordinates
-        let coords = Coordinates::new(3,4);
-        // Given a board size
-        let n = 6;
-        // And its neighbors
-        let expected = [
-            [2,3],
-            [3,3],
-            [4,3],
-            [2,4],
-            [3,4],
-            [4,4],
-            [2,5],
-            [3,5],
-            [4,5]
-        ];
-        // We can get the neighbors of the coordinates
-        let actual = coords.neighbors();
-        for i in 0..9 {
-            let b = actual[i].unwrap();
-            assert_eq!(expected[i][0], b.x);
-            assert_eq!(expected[i][1], b.y);
+	fn get_test_board() -> Vec<bool> {
+		vec![false, true, true, 
+			 false, true, false, 
+			 false, false, false]
+	}
 
-        }
-    }
+	#[test]
+	fn test_is_within_bounds() {
+		assert_eq!(is_within_bounds(1,2, 3), true);
+		assert_eq!(is_within_bounds(-1, 2, 3), false);
+		assert_eq!(is_within_bounds(0,4, 3), false);
+	}
 
-    #[test]
-    fn can_get_set_of_neighbors() {
-        // Given a set of neighbors
-        // We can get the count of each coordinate
-    }
+	#[test]
+	fn can_generate_a_random_board() {
+		let board = generate_board(3);
+		assert_eq!(board.len(), 9);
+	}
+
+	#[test]
+	fn can_increment_generation() {
+		let mut test_board = get_test_board();
+		test_board = advance_board(&test_board);
+		let expected = vec![false, true, true,
+							false, true, true,
+							false, false, false];
+		assert_eq!(test_board, expected);
+	}
+
+	#[test]
+	fn can_get_neighbors() {
+		let test_board = get_test_board();
+		let test_cases = [2,2,2,
+						  2,2,3,
+						  1,1,1];
+		for (i, case) in test_cases.iter().enumerate() {
+			println!("At index {} with case: {}", i, case);
+			let n = living_neighbors_count(i as i32, &test_board);
+			assert_eq!(n, *case);
+		}
+	}
+
+	#[test]
+	fn dies_on_one_or_less_neighbors() {
+		assert_eq!(false, will_survive(true, 0));
+		assert_eq!(false, will_survive(true, 1));
+	}
+
+	#[test]
+	fn survives_with_two_or_three_neighbors() {
+		assert_eq!(true, will_survive(true, 2));
+		assert_eq!(true, will_survive(true, 3));
+	}
+
+	#[test]
+	fn dies_with_four_or_more_neighbors() {
+		assert_eq!(false, will_survive(true, 4));
+		assert_eq!(false, will_survive(true, 999));
+	}
+
+	#[test]
+	fn born_with_exactly_three_neighbors() {
+		assert_eq!(true, will_survive(false, 3));
+	}
 }
