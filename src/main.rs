@@ -2,6 +2,22 @@
 #![allow(unused_variables)]
 use rand::{thread_rng, Rng};
 
+fn print_board(board: &[bool]) {
+	const LIVING: &str = "▢";
+	let board_size = (board.len() as f64).sqrt() as usize;
+	for i in 0..board_size {
+		for j in 0..board_size {
+			if board[i*board_size+j] {
+				print!("{}", LIVING);
+			}
+			else {
+				print!(" ");
+			}
+		}
+		println!("");
+	} 
+}
+
 /// Generates a randomized board
 /// 
 /// # Arguments
@@ -123,7 +139,15 @@ fn advance_board(board: &[bool]) -> Vec<bool> {
 }
 
 fn main() {
-	unimplemented!();
+	let board_size = 9;
+	let n_generations: u32 = 100;
+	let mut t_curr = generate_board(board_size);
+	for i in 0..n_generations {
+		println!("Generation {}.", i);
+		print_board(&t_curr);
+		t_curr = advance_board(&t_curr);
+		println!("");
+	}
 }
 
 #[cfg(test)]
