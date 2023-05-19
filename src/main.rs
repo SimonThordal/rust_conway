@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 use rand::{thread_rng, Rng};
+use std::time;
+use std::thread::sleep;
+use crossbeam::thread;
 
 fn print_board(board: &[bool]) {
 	const LIVING: &str = "▢";
@@ -138,15 +141,31 @@ fn advance_board(board: &[bool]) -> Vec<bool> {
 	return next_state;
 }
 
+fn advance_board_parallel(board: &[bool]) -> Vec<bool> {
+	let mut next_state: Vec<bool> = vec![false; board.len()];
+	thread::scope(|s| {
+		for i in 0..next_state.len() {
+			s.spawn(move |_| {
+				let n = living_neighbors_count(i as i32, board);
+				next_state[i] = will_survive(board[i], n as u32);
+			});
+		}
+	}).unwrap();
+	return next_state;
+}
+
 fn main() {
-	let board_size = 9;
-	let n_generations: u32 = 100;
+	let board_size = 81;
+	let n_generations: u32 = 1000;
+	let frequency_ms = 250;
 	let mut t_curr = generate_board(board_size);
+	let interval = time::Duration::from_millis(frequency_ms);
 	for i in 0..n_generations {
 		println!("Generation {}.", i);
 		print_board(&t_curr);
-		t_curr = advance_board(&t_curr);
-		println!("");
+		t_curr = advance_board_parallel(&t_curr);
+		sleep(interval);
+		print!("{}[2J", 27 as char);
 	}
 }
 
@@ -177,7 +196,7 @@ mod tests {
 	#[test]
 	fn can_increment_generation() {
 		let mut test_board = get_test_board();
-		test_board = advance_board(&test_board);
+		test_board = advance_board_parallel(&test_board);
 		let expected = vec![false, true, true,
 							false, true, true,
 							false, false, false];
